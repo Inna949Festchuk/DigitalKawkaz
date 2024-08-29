@@ -1,3 +1,122 @@
+# # Программа на Python, которая распарсит все страницы сайта https://www.rustore.ru/
+# # с помощью библиотеки BeautifulSoup4 и сохранением результат в единый файл .txt
+
+# # Получаем HTML-код основной страницы.
+# # Находим все ссылки на остальные страницы из тега <aside>.
+# # Переходим по каждой ссылке и распарсиваем страницу по тегу <article>.
+# # Отдельно находим ссылки на изображения из тега <img>
+# # Объединяем результаты парсинга и сохраняем их в файл.
+
+# import requests
+# from bs4 import BeautifulSoup
+# import time
+
+# # Функция для парсинга одной страницы и получения данных и ссылок на новые страницы
+# def parse_page(url):
+#     # - - - - - - - - - - - - - - - - - - - - - - - - - -
+#     # ФИШКА 1: Обеспечение безопасности приложения за счет проверки сертификатов шифрования SSL/TLS сайта для парсинга,
+#     # а для исключения перегрузки сайта для парсинга запросами искусственно добавленно время задержки 
+#     # для обработки каждой страницы по-умолчанию равное 0.5 секунды, которое можно регулировать
+#     # - - - - - - - - - - - - - - - - - - - - - - - - - -
+#     try:
+        
+#         # Включение проверки сертификата является важным шагом для обеспечения безопасности 
+#         # вашего приложения при работе с HTTPS-сайтами. Это поможет защитить ваше приложение 
+#         # от атак и обеспечить конфиденциальность данных.
+#         # Включить проверку сертификата, установив параметр verify=True
+#         response = requests.get(url, verify=True)
+#         response = requests.get(url)
+#         response.encoding = 'utf-8'  # Устанавливаем кодировку ответа на utf-8
+#         soup = BeautifulSoup(response.text, 'html.parser')
+
+#         # Сохранение заголовков и параграфов страницы в список
+#         data = []
+#         data.append(soup.title.text)
+
+#         header = soup.find('header')
+#         if header:
+#             data.append(header.text)
+
+#         article = soup.find('article')
+#         if article:
+#             data.append(article.text)
+
+#             # - - - - - - - - - - - - - - - - - - - - - - - - - -
+#             # ФИШКА 2: При парсинге извлекается не только текстовая информация, но и 
+#             # ссылки на изображения сайта, что не мало важно для понимания инструкций представленных на сайте
+#             # - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#             # Ищем все теги <img> внутри <article> и сохраняем ссылки на изображения
+#             images = article.find_all('img')
+#             for img in images:
+#                 img_src = img['src']
+#                 if img_src.startswith('/'):
+#                     img_src = 'https://www.rustore.ru' + img_src
+#                 data.append(f"Image: {img_src}")
+
+#         # Ищем все ссылки в теге aside и добавляем их в список ссылок
+#         aside_links = soup.find_all('aside')
+#         links = []
+#         for aside in aside_links:
+#             for a in aside.find_all('a', href=True):
+#                 href = a['href']
+#                 # Конструируем полный URL ссылки и добавляем в список
+#                 if href.startswith('/'):
+#                     href = 'https://www.rustore.ru' + href
+#                 links.append(href)
+
+#         return data, links
+    
+#     # В функции parse_page добавлена обработка исключений requests.exceptions.SSLError и общего Exception. 
+#     # Если возникает ошибка SSL, программа возвращает пустые списки data и links. 
+#     # Это позволит программе продолжить работу, даже если возникнут проблемы с SSL/TLS соединением на некоторых страницах.
+
+#     except requests.exceptions.SSLError as e:
+#         print(f"SSL Error occurred for URL: {url}")
+#         print(e)
+#         return [], []
+#     except Exception as e:
+#         print(f"Error occurred for URL: {url}")
+#         print(e)
+#         return [], []
+    
+# # Основная функция для парсинга сайта и сохранения результатов в файл
+# def parse_website(start_urls, output_file, timeout=0.5):
+#     parsed_urls = set()  # Используем множество для хранения уникальных URL
+#     urls_to_parse = start_urls[:]  # Создаем копию списка start_urls
+#     all_data = []
+
+#     # Цикл для обработки всех ссылок
+#     while urls_to_parse:
+#         url = urls_to_parse.pop(0)
+#         if url not in parsed_urls:
+#             print(f"Парсим страницу: {url}")
+#             page_data, new_links = parse_page(url)
+#             all_data.extend(page_data)  # Добавляем данные страницы в общий список
+#             urls_to_parse.extend(new_links)
+#             parsed_urls.add(url)
+#             time.sleep(timeout)  # Добавляем задержку, чтобы не перегружать сервер
+
+#     # Сохраняем все данные в файл
+#     with open(output_file, 'w', encoding='utf-8') as file:
+#         for line in all_data:
+#             file.write(line + '\n')
+
+# # Список стартовых страниц
+# start_urls = [
+#     'https://www.rustore.ru/help/users/',
+#     'https://www.rustore.ru/help/developers/',
+#     'https://www.rustore.ru/help/sdk/',
+#     'https://www.rustore.ru/help/work-with-rustore-api/',
+#     'https://www.rustore.ru/help/guides/'
+# ]
+
+# # Имя выходного файла
+# output_file = 'parsed_data.txt'
+
+# # Запуск парсинга сайта
+# parse_website(start_urls, output_file, timeout=0.1)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - -
 # версия 2
 # - - - - - - - - - - - - - - - - - - - - - - - - - -
